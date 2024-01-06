@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  background: var(--Blue-Dark-Blue-4, #2C3864);
+}
