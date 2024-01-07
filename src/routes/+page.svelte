@@ -26,9 +26,7 @@
     });
 </script>
 
-<h1 class="text-3xl font-bold text-white">
-    Welcome to TeamTime for ETF Insider
-</h1>
+<h1 class="text-3xl font-bold text-white">Welcome to TeamTime for your team</h1>
 {#if usersData && usersData.length > 0}
     {#each usersData as userData}
         <UserComponent {userData} />
