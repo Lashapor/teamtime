@@ -1,8 +1,9 @@
 # use teamtime
 
--Create google sheet file with proper data
--Publish to web and choose .csv
--Add published url at the end of the teamtime url like this https://teamtime-six.vercel.app/#publishedurl
+> Create google sheet file with proper data
+> Publish to web and choose .csv
+> Add published url at the end of the teamtime url like this https://teamtime-six.vercel.app/#publishedurl
+> Simple data - [link](https://docs.google.com/spreadsheets/d/1PyGMr0rXqnHjLXDvBgHjsz0ef0mxqwm3r7lmukw5RXk/edit?usp=sharing)
 
 
 ## Developing
