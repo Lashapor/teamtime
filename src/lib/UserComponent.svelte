@@ -16,13 +16,6 @@
     let currentHourBasedOnUserTime: any;
     let timeBasedOnHovered: number | null;
 
-    // colors
-    let borderColor = "#16A6F8";
-    let currentBgColor = "#ff8e3d";
-    let hoveredBgColor = "#FF7C60";
-    let hourBgColorBasedOnHovered = "#f6c29d9b";
-    let workHoursBgColor = "#16a5f89a";
-
     // fetch time based on GMT
     async function fetchTime() {
         try {
@@ -118,13 +111,13 @@
             <button
                 on:mouseenter={(event) => handleMouseEnter(event)}
                 on:mouseleave={handleMouseLeave}
-                class={`p-1 md:p-2 hover:bg-[${hoveredBgColor}] cursor-pointer text-xs md:text-base border text-center flex items-center border-[${borderColor}] justify-center ${
+                class={`p-1 md:p-2 hover:bg-[#FF7C60] cursor-pointer text-xs md:text-base border text-center flex items-center border-[#16A6F8] justify-center ${
                     parseInt(hour) === currentHourBasedOnUserTime
-                        ? `bg-[${currentBgColor}]`
+                        ? `bg-[#ff8e3d]`
                         : ""
-                } ${isWithinRange(hour) ? `bg-[${workHoursBgColor}]` : ""} ${
+                } ${isWithinRange(hour) ? `bg-[#16a5f89a]` : ""} ${
                     parseInt(hour) === timeBasedOnHovered
-                        ? `bg-[${hourBgColorBasedOnHovered}]`
+                        ? `bg-[#f6c29d9b]`
                         : ""
                 } `}
             >
