@@ -1,17 +1,29 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { hoverState } from "../routes/stores/store";
 
+    // data sample
     export let userData = {
         name: "Lasha Porchkhidze",
         timezone: "GMT+4",
-        imgUrl: "/user-imgs/lashap.png",
+        imgUrl: "/img.png",
         startWorkTime: "09:00",
         endWorkTime: "18:00",
     };
 
     let userTime = "";
+    let userDate = "";
     let currentHourBasedOnUserTime: any;
+    let timeBasedOnHovered: number | null;
 
+    // colors
+    let borderColor = "#16A6F8";
+    let currentBgColor = "#ff8e3d";
+    let hoveredBgColor = "#FF7C60";
+    let hourBgColorBasedOnHovered = "#f6c29d9b";
+    let workHoursBgColor = "#16a5f89a";
+
+    // fetch time based on GMT
     async function fetchTime() {
         try {
             // Since the API uses a reverse offset, convert "GMT+3" to "GMT-3"
@@ -22,10 +34,10 @@
                 `https://worldtimeapi.org/api/timezone/${apiTimezone}`,
             );
             const data = await response.json();
-            const datetime2 = new Date(data.datetime);
+
             const datetime = data.datetime;
             userTime = datetime.split("T")[1].substring(0, 5);
-            // currentHourBasedOnUserTime = datetime.getHours(); // Get the hour
+            userDate = datetime.substring(0, 7);
             currentHourBasedOnUserTime = parseInt(
                 datetime.split("T")[1].substring(0, 2),
             );
@@ -34,25 +46,37 @@
         }
     }
 
-    // async function fetchTime() {
-    //     try {
-    //         const response = await fetch(
-    //             `https://worldtimeapi.org/api/timezone${userData.areaLocationRegion}.txt`,
-    //         );
-    //         const data = await response.text();
-    //         const lines = data.split("\n");
-    //         const datetimeLine = lines.find((line) =>
-    //             line.startsWith("datetime:"),
-    //         );
-    //         if (datetimeLine) {
-    //             userTime = datetimeLine.split(" ")[1].substr(11, 5); // Extract the time part
-    //             currentHourBasedOnUserTime = parseInt(userTime.split(":")[0]); // Extract the hour
-    //             debugger
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching time:", error);
-    //     }
-    // }
+    function handleMouseEnter(event: any) {
+        let hoveredTime = parseInt(event.target.textContent); // 20
+        let hoveredTimezone = parseInt(userData.timezone.split("GMT")[1]); // gmt +2
+
+        hoverState.set({
+            hoveredTime: hoveredTime,
+            hoveredTimezone: hoveredTimezone,
+        });
+    }
+
+    function handleMouseLeave() {
+        hoverState.set({ hoveredTime: null, hoveredTimezone: null });
+    }
+
+    // calculate timeDifference and set Time based on hovered time&timezone
+    hoverState.subscribe(($hoverState) => {
+        if (
+            $hoverState.hoveredTime !== null &&
+            $hoverState.hoveredTimezone !== null
+        ) {
+            let userTimeZone = parseInt(userData.timezone.split("GMT")[1]);
+            let hoveredTimeZone = $hoverState.hoveredTimezone;
+
+            let timeDifference = hoveredTimeZone - userTimeZone;
+
+            timeBasedOnHovered =
+                ($hoverState.hoveredTime - timeDifference + 24) % 24;
+        } else {
+            timeBasedOnHovered = null;
+        }
+    });
 
     onMount(() => {
         fetchTime();
@@ -91,15 +115,21 @@
     </div>
     <div class="flex flex-wrap justify-center time-container">
         {#each hours as hour}
-            <div
-                class={`p-1 md:p-2 text-xs md:text-base border border-[#16A6F8] text-center flex items-center justify-center ${
+            <button
+                on:mouseenter={(event) => handleMouseEnter(event)}
+                on:mouseleave={handleMouseLeave}
+                class={`p-1 md:p-2 hover:bg-[${hoveredBgColor}] cursor-pointer text-xs md:text-base border text-center flex items-center border-[${borderColor}] justify-center ${
                     parseInt(hour) === currentHourBasedOnUserTime
-                        ? "bg-[#FFa141CC]"
+                        ? `bg-[${currentBgColor}]`
                         : ""
-                } ${isWithinRange(hour) ? "bg-[#16a5f89a]" : ""}`}
+                } ${isWithinRange(hour) ? `bg-[${workHoursBgColor}]` : ""} ${
+                    parseInt(hour) === timeBasedOnHovered
+                        ? `bg-[${hourBgColorBasedOnHovered}]`
+                        : ""
+                } `}
             >
                 {hour}
-            </div>
+            </button>
         {/each}
     </div>
 </div>
