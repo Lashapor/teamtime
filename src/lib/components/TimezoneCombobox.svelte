@@ -117,23 +117,23 @@
 
 	{#if open}
 		<div
-			class="absolute z-30 mt-1 w-56 rounded-md border border-white/10 bg-[#1d2547] shadow-xl"
+			class="absolute z-30 mt-1 left-0 w-60 max-w-[calc(100vw-1.5rem)] rounded-md border border-white/10 bg-[#1d2547] shadow-xl"
 			role="dialog"
 		>
-			<div class="p-1.5 border-b border-white/10">
+			<div class="p-2 border-b border-white/10">
 				<input
 					bind:this={inputEl}
 					bind:value={query}
 					on:keydown={onKey}
 					{placeholder}
-					class="w-full rounded bg-black/30 border border-white/10 text-white text-sm px-2 py-1 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400"
+					class="w-full rounded bg-black/30 border border-white/10 text-white text-sm px-2.5 py-1.5 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400"
 					aria-label="Search timezones"
 				/>
 			</div>
 			<ul
 				bind:this={listEl}
 				role="listbox"
-				class="max-h-56 overflow-y-auto py-1 text-sm"
+				class="max-h-[min(60vh,18rem)] overflow-y-auto py-1 text-sm"
 			>
 				{#each filtered as opt, i (opt.minutes)}
 					<li
@@ -141,8 +141,8 @@
 						aria-selected={opt.minutes === value}
 						on:mouseenter={() => (highlight = i)}
 						on:mousedown|preventDefault={() => selectByIndex(i)}
-						class="px-3 py-1.5 cursor-pointer flex items-center justify-between {i === highlight
-							? 'bg-sky-500/20 text-white'
+						class="px-3 py-2 cursor-pointer flex items-center justify-between {i === highlight
+							? 'bg-sky-500/25 text-white'
 							: 'text-white/80 hover:bg-white/5'}"
 					>
 						<span class="tabular-nums">{formatOffset(opt.minutes)}</span>

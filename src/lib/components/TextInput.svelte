@@ -7,7 +7,7 @@
 	export let disabled = false;
 
 	const cls =
-		'rounded-md border border-white/15 bg-white/5 text-white text-sm px-2.5 py-1.5 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 disabled:opacity-50';
+		'w-full rounded-md border border-white/15 bg-white/5 text-white text-sm px-3 py-2 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 disabled:opacity-50';
 </script>
 
 {#if type === 'time'}
