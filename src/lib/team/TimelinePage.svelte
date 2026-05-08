@@ -2,29 +2,20 @@
 	import { DateTime } from 'luxon';
 	import { onMount } from 'svelte';
 	import TimelineRow from './TimelineRow.svelte';
-	import BookingModal from './BookingModal.svelte';
-	import Button from '../components/Button.svelte';
 	import Spinner from '../components/Spinner.svelte';
 	import TimezoneCombobox from '../components/TimezoneCombobox.svelte';
-	import { team as teamStore, teamError, teamLoading } from '../stores/team';
 	import { resetViewerOffset, setViewerOffset, viewer } from '../stores/viewer';
 	import { anchorDay, rebaseAnchor, setAnchorToToday, shiftDay } from '../stores/anchorDay';
-	import { signedInUser } from '../stores/auth';
-	import { signIn, signOut } from '../auth/gis';
-	import { fetchPublishedCsv } from '../sheet/csv';
-	import { parseTeam } from '../sheet/parser';
 	import { offsetToZone } from '../time/offsets';
 	import { clearPin, pinnedInstant } from '../stores/hover';
-	import { BOOKING_ENABLED, getCsvUrlFromHash } from '../config';
-	import type { TeamMember } from '../types';
-	import type { TeamConfig } from './teams';
+	import type { Team, TeamMember } from '../types';
 
-	export let team: TeamConfig;
-
-	let bookingOpen = false;
-	let bookingMember: TeamMember | null = null;
-	let bookingInstant: DateTime | null = null;
-	let signInBusy = false;
+	export let team: Team;
+	export let members: TeamMember[];
+	export let memberShiftIdsById: Record<string, string[]> = {};
+	export let canEditMember: (member: TeamMember) => boolean = () => false;
+	export let loading = false;
+	export let errorMessage: string | null = null;
 
 	function onTzChange(e: CustomEvent<number>) {
 		const next = e.detail;
@@ -41,37 +32,9 @@
 	$: anchorShortLabel = $anchorDay.toFormat('ccc, LLL d');
 	$: anchorLongLabel = $anchorDay.toFormat('ccc, LLL d, yyyy');
 
-	onMount(async () => {
+	onMount(() => {
 		setAnchorToToday($viewer.offsetMinutes);
-		teamLoading.set(true);
-		teamError.set(null);
-		try {
-			const csvUrl = team.csvUrl || getCsvUrlFromHash();
-			const csv = await fetchPublishedCsv(csvUrl);
-			teamStore.set(parseTeam(csv));
-		} catch (e) {
-			teamError.set(e instanceof Error ? e.message : 'Failed to load team data.');
-		} finally {
-			teamLoading.set(false);
-		}
 	});
-
-	function onBookCell(e: CustomEvent<{ member: TeamMember; instant: DateTime; rowLocal: DateTime }>) {
-		bookingMember = e.detail.member;
-		bookingInstant = e.detail.instant;
-		bookingOpen = true;
-	}
-
-	async function handleSignIn() {
-		signInBusy = true;
-		try {
-			await signIn();
-		} catch {
-			// auth store carries the error
-		} finally {
-			signInBusy = false;
-		}
-	}
 </script>
 
 <div class="w-full px-3 md:px-6 py-3 md:py-5">
@@ -87,28 +50,7 @@
 				Tap an hour to highlight it on every row.
 			</p>
 		</div>
-		{#if BOOKING_ENABLED}
-			<div class="flex items-center gap-2 shrink-0">
-				{#if $signedInUser}
-					<div class="flex items-center gap-2 text-sm text-white/80">
-						{#if $signedInUser.picture}
-							<img
-								src={$signedInUser.picture}
-								alt=""
-								class="h-7 w-7 rounded-full"
-								referrerpolicy="no-referrer"
-							/>
-						{/if}
-						<span class="hidden sm:inline truncate max-w-[180px]">{$signedInUser.email}</span>
-					</div>
-					<Button variant="ghost" size="sm" on:click={signOut}>Sign out</Button>
-				{:else}
-					<Button variant="primary" size="sm" on:click={handleSignIn} disabled={signInBusy}>
-						{#if signInBusy}<Spinner size="sm" />{/if} Sign in with Google
-					</Button>
-				{/if}
-			</div>
-		{/if}
+		<slot name="header-actions"></slot>
 	</header>
 
 	<div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3 text-sm">
@@ -186,26 +128,25 @@
 		</div>
 	{/if}
 
-	{#if $teamLoading}
-		<div class="flex items-center justify-center py-16">
-			<Spinner />
-		</div>
-	{:else if $teamError}
+	{#if loading}
+		<div class="flex items-center justify-center py-16"><Spinner /></div>
+	{:else if errorMessage}
 		<div class="rounded-lg border border-rose-400/30 bg-rose-500/10 text-rose-100 px-4 py-3">
-			Could not load team data — {$teamError}
+			Could not load team data — {errorMessage}
 		</div>
-	{:else if $teamStore.length === 0}
+	{:else if members.length === 0}
 		<div class="rounded-lg border border-white/10 bg-white/5 text-white/70 px-4 py-6 text-center">
-			No teammates found. Check the CSV at the configured URL.
+			No teammates yet. Add them from the admin page.
 		</div>
 	{:else}
 		<div class="space-y-1.5">
-			{#each $teamStore as member (member.email || member.name)}
+			{#each members as member (member.id)}
 				<TimelineRow
 					{member}
 					anchorDay={$anchorDay}
-					bookingEnabled={BOOKING_ENABLED}
-					on:bookCell={onBookCell}
+					canEdit={canEditMember(member)}
+					currentShiftIds={memberShiftIdsById[member.id] ?? []}
+					on:saved
 				/>
 			{/each}
 		</div>
@@ -229,13 +170,3 @@
 		</div>
 	{/if}
 </div>
-
-{#if BOOKING_ENABLED}
-	<BookingModal
-		open={bookingOpen}
-		member={bookingMember}
-		initialInstant={bookingInstant}
-		viewerOffset={$viewer.offsetMinutes}
-		on:close={() => (bookingOpen = false)}
-	/>
-{/if}

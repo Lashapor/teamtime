@@ -35,6 +35,7 @@ describe('formatHHMM', () => {
 
 describe('isInstantInShifts', () => {
 	const lasha: TeamMember = {
+		id: 'm1',
 		name: 'Lasha',
 		email: 'l@test.com',
 		imgUrl: null,
@@ -44,7 +45,8 @@ describe('isInstantInShifts', () => {
 			{ startMin: 540, endMin: 1080 },
 			{ startMin: 1290, endMin: 1440 }
 		],
-		rowIndex: 2
+		role: 'owner',
+		userId: 'u1'
 	};
 
 	it('returns true at 10:00 in row local time', () => {

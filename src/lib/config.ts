@@ -1,17 +1,3 @@
 import { env } from '$env/dynamic/public';
 
-export const DEFAULT_CSV_URL =
-	'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH90sYkVlSRqPD3VmWOGgTbUEoRA4PsiukSdHUh4C3aZAkXnvtzvoGVnRN-S_seFJSR9N9gQgeMR1Z/pub?gid=0&single=true&output=csv';
-
-export const CSV_URL = env.PUBLIC_CSV_URL || DEFAULT_CSV_URL;
-export const APPS_SCRIPT_URL = env.PUBLIC_APPS_SCRIPT_URL || '';
-export const GOOGLE_CLIENT_ID = env.PUBLIC_GOOGLE_CLIENT_ID || '';
-export const SHEET_WRITE_SECRET = env.PUBLIC_SHEET_WRITE_SECRET || '';
-
-export const BOOKING_ENABLED = false;
-
-export function getCsvUrlFromHash(): string {
-	if (typeof window === 'undefined') return CSV_URL;
-	const hash = window.location.hash.slice(1);
-	return hash || CSV_URL;
-}
+export const APP_NAME = env.PUBLIC_APP_NAME || 'Team Time';

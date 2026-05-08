@@ -11,9 +11,12 @@
 	let open = false;
 	let query = '';
 	let highlight = 0;
+	let openUp = false;
 	let inputEl: HTMLInputElement | undefined;
 	let listEl: HTMLUListElement | undefined;
 	let rootEl: HTMLDivElement | undefined;
+
+	const DROPDOWN_MAX_HEIGHT = 320; // matches max-h below; used for direction calc
 
 	$: selectedLabel = formatOffset(value);
 
@@ -31,12 +34,19 @@
 
 	async function openMenu() {
 		if (open) return;
-		open = true;
 		query = '';
 		highlight = Math.max(
 			0,
 			UTC_OFFSETS.findIndex((o) => o.minutes === value)
 		);
+		// Decide drop direction BEFORE rendering, so the panel never flashes in the wrong place.
+		if (rootEl && typeof window !== 'undefined') {
+			const rect = rootEl.getBoundingClientRect();
+			const spaceBelow = window.innerHeight - rect.bottom;
+			const spaceAbove = rect.top;
+			openUp = spaceBelow < DROPDOWN_MAX_HEIGHT && spaceAbove > spaceBelow;
+		}
+		open = true;
 		await tick();
 		inputEl?.focus();
 		scrollToHighlight();
@@ -97,7 +107,7 @@
 <div bind:this={rootEl} class="relative inline-block text-sm">
 	<button
 		type="button"
-		class="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400"
+		class="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400"
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		aria-label={ariaLabel}
@@ -117,7 +127,9 @@
 
 	{#if open}
 		<div
-			class="absolute z-30 mt-1 left-0 w-60 max-w-[calc(100vw-1.5rem)] rounded-md border border-white/10 bg-[#1d2547] shadow-xl"
+			class="absolute z-30 left-0 w-60 max-w-[calc(100vw-1.5rem)] rounded-md border border-white/10 bg-[#1d2547] shadow-xl {openUp
+				? 'bottom-full mb-1'
+				: 'top-full mt-1'}"
 			role="dialog"
 		>
 			<div class="p-2 border-b border-white/10">
@@ -133,7 +145,7 @@
 			<ul
 				bind:this={listEl}
 				role="listbox"
-				class="max-h-[min(60vh,18rem)] overflow-y-auto py-1 text-sm"
+				class="max-h-[18rem] overflow-y-auto py-1 text-sm"
 			>
 				{#each filtered as opt, i (opt.minutes)}
 					<li
