@@ -1,17 +1,12 @@
-import {
-	PUBLIC_APPS_SCRIPT_URL,
-	PUBLIC_CSV_URL,
-	PUBLIC_GOOGLE_CLIENT_ID,
-	PUBLIC_SHEET_WRITE_SECRET
-} from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
 export const DEFAULT_CSV_URL =
 	'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH90sYkVlSRqPD3VmWOGgTbUEoRA4PsiukSdHUh4C3aZAkXnvtzvoGVnRN-S_seFJSR9N9gQgeMR1Z/pub?gid=0&single=true&output=csv';
 
-export const CSV_URL = PUBLIC_CSV_URL || DEFAULT_CSV_URL;
-export const APPS_SCRIPT_URL = PUBLIC_APPS_SCRIPT_URL || '';
-export const GOOGLE_CLIENT_ID = PUBLIC_GOOGLE_CLIENT_ID || '';
-export const SHEET_WRITE_SECRET = PUBLIC_SHEET_WRITE_SECRET || '';
+export const CSV_URL = env.PUBLIC_CSV_URL || DEFAULT_CSV_URL;
+export const APPS_SCRIPT_URL = env.PUBLIC_APPS_SCRIPT_URL || '';
+export const GOOGLE_CLIENT_ID = env.PUBLIC_GOOGLE_CLIENT_ID || '';
+export const SHEET_WRITE_SECRET = env.PUBLIC_SHEET_WRITE_SECRET || '';
 
 export const BOOKING_ENABLED = false;
 
