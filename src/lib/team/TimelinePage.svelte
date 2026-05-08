@@ -14,7 +14,7 @@
 	import { fetchPublishedCsv } from '../sheet/csv';
 	import { parseTeam } from '../sheet/parser';
 	import { offsetToZone } from '../time/offsets';
-	import { getCsvUrlFromHash } from '../config';
+	import { BOOKING_ENABLED, getCsvUrlFromHash } from '../config';
 	import type { TeamMember } from '../types';
 	import type { TeamConfig } from './teams';
 
@@ -78,29 +78,31 @@
 				{team.name}
 			</h1>
 			<span class="text-xs text-white/50">
-				Click a slot to book · Hover to translate across rows
+				Hover any hour to see the matching time on every teammate's row
 			</span>
 		</div>
-		<div class="flex items-center gap-2">
-			{#if $signedInUser}
-				<div class="flex items-center gap-2 text-sm text-white/80">
-					{#if $signedInUser.picture}
-						<img
-							src={$signedInUser.picture}
-							alt=""
-							class="h-7 w-7 rounded-full"
-							referrerpolicy="no-referrer"
-						/>
-					{/if}
-					<span class="hidden sm:inline truncate max-w-[180px]">{$signedInUser.email}</span>
-				</div>
-				<Button variant="ghost" size="sm" on:click={signOut}>Sign out</Button>
-			{:else}
-				<Button variant="primary" size="sm" on:click={handleSignIn} disabled={signInBusy}>
-					{#if signInBusy}<Spinner size="sm" />{/if} Sign in with Google
-				</Button>
-			{/if}
-		</div>
+		{#if BOOKING_ENABLED}
+			<div class="flex items-center gap-2">
+				{#if $signedInUser}
+					<div class="flex items-center gap-2 text-sm text-white/80">
+						{#if $signedInUser.picture}
+							<img
+								src={$signedInUser.picture}
+								alt=""
+								class="h-7 w-7 rounded-full"
+								referrerpolicy="no-referrer"
+							/>
+						{/if}
+						<span class="hidden sm:inline truncate max-w-[180px]">{$signedInUser.email}</span>
+					</div>
+					<Button variant="ghost" size="sm" on:click={signOut}>Sign out</Button>
+				{:else}
+					<Button variant="primary" size="sm" on:click={handleSignIn} disabled={signInBusy}>
+						{#if signInBusy}<Spinner size="sm" />{/if} Sign in with Google
+					</Button>
+				{/if}
+			</div>
+		{/if}
 	</header>
 
 	<div class="flex flex-wrap items-center gap-3 mb-3 text-sm">
@@ -155,7 +157,12 @@
 	{:else}
 		<div class="space-y-1.5">
 			{#each $teamStore as member (member.email || member.name)}
-				<TimelineRow {member} anchorDay={$anchorDay} on:bookCell={onBookCell} />
+				<TimelineRow
+					{member}
+					anchorDay={$anchorDay}
+					bookingEnabled={BOOKING_ENABLED}
+					on:bookCell={onBookCell}
+				/>
 			{/each}
 		</div>
 		<div class="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-white/50">
@@ -179,10 +186,12 @@
 	{/if}
 </div>
 
-<BookingModal
-	open={bookingOpen}
-	member={bookingMember}
-	initialInstant={bookingInstant}
-	viewerOffset={$viewer.offsetMinutes}
-	on:close={() => (bookingOpen = false)}
-/>
+{#if BOOKING_ENABLED}
+	<BookingModal
+		open={bookingOpen}
+		member={bookingMember}
+		initialInstant={bookingInstant}
+		viewerOffset={$viewer.offsetMinutes}
+		on:close={() => (bookingOpen = false)}
+	/>
+{/if}

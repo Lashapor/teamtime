@@ -8,6 +8,7 @@
 	export let isCurrent: boolean;
 	export let isHovered: boolean;
 	export let isDayStart: boolean;
+	export let clickable = true;
 
 	const dispatch = createEventDispatcher<{
 		hover: DateTime;
@@ -20,7 +21,8 @@
 	$: hour12 = rowLocal.hour % 12 === 0 ? 12 : rowLocal.hour % 12;
 
 	$: classes = [
-		'group relative flex h-10 min-w-0 flex-1 shrink basis-0 flex-col items-center justify-center text-[11px] md:text-xs cursor-pointer transition-colors select-none border-r border-white/5',
+		'group relative flex h-10 min-w-0 flex-1 shrink basis-0 flex-col items-center justify-center text-[11px] md:text-xs transition-colors select-none border-r border-white/5',
+		clickable ? 'cursor-pointer' : 'cursor-default',
 		isWorking ? 'bg-sky-500/30 text-white' : 'bg-white/[0.02] text-white/60',
 		hourLabel === 0 ? 'font-semibold' : '',
 		isCurrent ? 'ring-2 ring-amber-300 ring-inset z-10' : '',

@@ -13,6 +13,8 @@ export const APPS_SCRIPT_URL = PUBLIC_APPS_SCRIPT_URL || '';
 export const GOOGLE_CLIENT_ID = PUBLIC_GOOGLE_CLIENT_ID || '';
 export const SHEET_WRITE_SECRET = PUBLIC_SHEET_WRITE_SECRET || '';
 
+export const BOOKING_ENABLED = false;
+
 export function getCsvUrlFromHash(): string {
 	if (typeof window === 'undefined') return CSV_URL;
 	const hash = window.location.hash.slice(1);

@@ -13,6 +13,7 @@
 
 	export let member: TeamMember;
 	export let anchorDay: DateTime;
+	export let bookingEnabled = true;
 
 	const dispatch = createEventDispatcher<{
 		bookCell: { member: TeamMember; instant: DateTime; rowLocal: DateTime };
@@ -54,7 +55,7 @@
 		.map((c, i) => ({ index: i, rowLocal: c.rowLocal, isDayStart: c.isDayStart }))
 		.filter((c) => c.isDayStart);
 
-	$: canEdit = !!$signedInUser && $signedInUser.email === member.email;
+	$: canEdit = bookingEnabled && !!$signedInUser && $signedInUser.email === member.email;
 
 	function onHover(e: CustomEvent<DateTime>) {
 		hoveredInstant.set(e.detail);
@@ -63,6 +64,7 @@
 		hoveredInstant.set(null);
 	}
 	function onClick(e: CustomEvent<{ instant: DateTime; rowLocal: DateTime }>) {
+		if (!bookingEnabled) return;
 		dispatch('bookCell', { member, instant: e.detail.instant, rowLocal: e.detail.rowLocal });
 	}
 
@@ -108,6 +110,7 @@
 						isCurrent={cell.isCurrent}
 						isHovered={isHoveredCell(cell.instant, $hoveredInstant)}
 						isDayStart={cell.isDayStart}
+						clickable={bookingEnabled}
 						on:hover={onHover}
 						on:leave={onLeave}
 						on:click={onClick}

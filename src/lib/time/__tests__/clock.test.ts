@@ -3,7 +3,9 @@ import { DateTime } from 'luxon';
 import { hourCellInstant, isCurrentHour } from '../clock';
 
 describe('isCurrentHour', () => {
-	afterEach(() => vi.useRealTimers());
+	afterEach(() => {
+		vi.useRealTimers();
+	});
 
 	it('returns true for the cell whose instant covers "now" — independent of row offset', () => {
 		// Frozen wall clock: 2026-05-09T12:00:00Z (== 16:00 UTC+4 == 08:00 UTC-4).
