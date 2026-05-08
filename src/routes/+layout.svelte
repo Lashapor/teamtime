@@ -1,19 +1,18 @@
 <script lang="ts">
-    import "../app.css";
+	import '../app.css';
 </script>
 
-<main class="content flex justify-center">
-    <div class=" flex flex-col w-full items-start justify-center m-1 md:m-5">
-        <slot />
-    </div>
+<main class="min-h-screen">
+	<slot />
 </main>
 
 <style>
-    body {
-        background: radial-gradient(
-            50% 50% at 50% 50%,
-            rgba(0, 99, 172, 0.5) 0%,
-            rgba(0, 99, 172, 0) 100%
-        );
-    }
+	:global(body) {
+		background:
+			radial-gradient(60% 60% at 30% 0%, rgba(56, 189, 248, 0.15) 0%, rgba(56, 189, 248, 0) 60%),
+			radial-gradient(50% 50% at 80% 100%, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0) 60%),
+			#0f1530;
+		color: #fff;
+		min-height: 100vh;
+	}
 </style>

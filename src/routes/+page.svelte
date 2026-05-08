@@ -1,38 +1,63 @@
 <script lang="ts">
-    import UserComponent from "$lib/UserComponent.svelte";
-    import { onMount } from "svelte";
-    import Loading from "$lib/Loading.svelte";
-    import * as d3 from "d3";
-
-    let usersData: [];
-
-    let defaultDataUrl =
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vRlywXJkjZT1DpyXr3bBfINZlyjlZ0TEcJYNOIQwoIPc0lsUG0P2-gTm1SxcQ09h4ieykJiWipkD797/pub?output=csv";
-
-    function fetchData(dataUrl: string) {
-        d3.csv(dataUrl)
-            .then((data: any) => {
-                console.log({ data: data });
-                usersData = data;
-            })
-            .catch((error: any) => console.log("Error:", error));
-    }
-
-    onMount(() => {
-        let hashUrl = window.location.hash.substring(1); // Remove '#' from the start
-        let dataUrl = hashUrl ? hashUrl : defaultDataUrl;
-
-        fetchData(dataUrl);
-    });
+	import Button from '$lib/components/Button.svelte';
 </script>
 
-<h1 class="text-3xl font-bold text-white">Welcome to TeamTime for your team</h1>
-{#if usersData && usersData.length > 0}
-    {#each usersData as userData}
-        <UserComponent {userData} />
-    {/each}
-{:else}
-    <div class="flex w-full items-center justify-center">
-        <Loading />
-    </div>
-{/if}
+<svelte:head>
+	<title>Team Time</title>
+	<meta
+		name="description"
+		content="See your team across timezones at a glance, then book a meeting in one click."
+	/>
+</svelte:head>
+
+<div class="min-h-[calc(100vh-2rem)] flex items-center">
+	<div class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+		<div class="space-y-6 text-white">
+			<span
+				class="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs uppercase tracking-wide text-sky-200"
+			>
+				<span class="h-1.5 w-1.5 rounded-full bg-sky-300"></span> Team Time
+			</span>
+			<h1 class="text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
+				See your team across timezones — and book a meeting in one click.
+			</h1>
+			<p class="text-base md:text-lg text-white/70 leading-relaxed">
+				Team Time turns a Google Sheet into a live, side-by-side view of everyone's working hours.
+				Spot overlap instantly, click a slot, schedule it. No more "what time is that for you?"
+			</p>
+			<div class="flex flex-wrap gap-3 pt-2">
+				<a href="/thn" class="contents">
+					<Button>View THN timeline →</Button>
+				</a>
+				<a
+					href="https://github.com/Lashapor/teamtime"
+					target="_blank"
+					rel="noreferrer"
+					class="contents"
+				>
+					<Button variant="secondary">How it works</Button>
+				</a>
+			</div>
+			<dl class="grid gap-4 md:grid-cols-3 pt-8 border-t border-white/10 mt-10">
+				<div>
+					<dt class="text-sm font-medium text-white">Live timezones</dt>
+					<dd class="text-xs text-white/60 mt-1">
+						Auto-detected; switch with a dropdown. Half-hour offsets supported.
+					</dd>
+				</div>
+				<div>
+					<dt class="text-sm font-medium text-white">Split shifts</dt>
+					<dd class="text-xs text-white/60 mt-1">
+						Two working ranges per teammate, e.g. 9–18 and 21:30–24:00.
+					</dd>
+				</div>
+				<div>
+					<dt class="text-sm font-medium text-white">One-click booking</dt>
+					<dd class="text-xs text-white/60 mt-1">
+						Click any hour to draft a Google Calendar invite to that teammate.
+					</dd>
+				</div>
+			</dl>
+		</div>
+	</div>
+</div>
