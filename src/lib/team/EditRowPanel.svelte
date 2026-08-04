@@ -1,22 +1,20 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import Button from '../components/Button.svelte';
-	import Select from '../components/Select.svelte';
 	import TextInput from '../components/TextInput.svelte';
+	import TimezoneCombobox from '../components/TimezoneCombobox.svelte';
 	import Toggle from '../components/Toggle.svelte';
 	import Spinner from '../components/Spinner.svelte';
-	import { UTC_OFFSETS } from '../time/offsets';
 	import { formatHHMM, parseShift } from '../time/shifts';
-	import { team } from '../stores/team';
-	import { signedInUser } from '../stores/auth';
-	import { updateRow } from '../sheet/writer';
+	import { setMemberShifts, updateMember } from '../db/queries';
 	import type { Shift, TeamMember } from '../types';
 
 	export let member: TeamMember;
+	export let currentShiftIds: string[];
 
 	const dispatch = createEventDispatcher<{ close: void; saved: void }>();
 
-	let offset = String(member.offsetMinutes);
+	let offsetMinutes = member.offsetMinutes;
 	let shift1Start = formatHHMM(member.shifts[0].startMin);
 	let shift1End = formatHHMM(member.shifts[0].endMin);
 	let hasShift2 = member.shifts.length === 2;
@@ -42,38 +40,22 @@
 			shifts.push(s2);
 		}
 		shifts.sort((a, b) => a.startMin - b.startMin);
-		const offsetMinutes = parseInt(offset, 10);
-		const user = $signedInUser;
-		if (!user) {
-			error = 'Sign in again to save.';
-			return;
-		}
 		saving = true;
-		const previous = member;
-		const optimistic: TeamMember = {
-			...member,
-			offsetMinutes,
-			offsetLabel: optimistic_offsetLabel(offsetMinutes),
-			shifts: shifts.length === 2 ? [shifts[0], shifts[1]] : [shifts[0]]
-		};
-		team.update((list) => list.map((m) => (m.email === member.email ? optimistic : m)));
 		try {
-			await updateRow({ email: member.email, offsetMinutes, shifts }, user.idToken);
+			if (offsetMinutes !== member.offsetMinutes) {
+				await updateMember({ memberId: member.id, patch: { offsetMinutes } });
+			}
+			await setMemberShifts({
+				memberId: member.id,
+				currentShiftIds,
+				shifts
+			});
 			dispatch('saved');
 		} catch (e) {
-			team.update((list) => list.map((m) => (m.email === member.email ? previous : m)));
 			error = e instanceof Error ? e.message : 'Failed to save.';
 		} finally {
 			saving = false;
 		}
-	}
-
-	function optimistic_offsetLabel(min: number): string {
-		const sign = min >= 0 ? '+' : '-';
-		const abs = Math.abs(min);
-		const hh = Math.floor(abs / 60).toString().padStart(2, '0');
-		const mm = (abs % 60).toString().padStart(2, '0');
-		return `UTC${sign}${hh}:${mm}`;
 	}
 </script>
 
@@ -81,11 +63,11 @@
 	<div class="grid gap-3 md:grid-cols-[auto_1fr_1fr_auto] items-end">
 		<label class="flex flex-col gap-1 text-xs text-white/70">
 			Timezone
-			<Select bind:value={offset} ariaLabel="Timezone offset">
-				{#each UTC_OFFSETS as opt}
-					<option value={String(opt.minutes)}>{opt.label}</option>
-				{/each}
-			</Select>
+			<TimezoneCombobox
+				value={offsetMinutes}
+				on:change={(e) => (offsetMinutes = e.detail)}
+				ariaLabel="Timezone offset"
+			/>
 		</label>
 
 		<div class="flex flex-col gap-1 text-xs text-white/70">

@@ -1,91 +1,109 @@
-# Team Time
+# TeamTime
 
-A live, side-by-side view of your team's working hours across timezones — and one-click Google Calendar booking from any time slot.
+Self-hosted timezone scheduler for distributed teams.
 
-- **Landing page:** `/` — short intro with a CTA to view the team
-- **Timeline:** `/<team-slug>` — WorldTimeBuddy-style 24-hour grid, one row per teammate (e.g., `/thn`). Each team has its own slug + password, configured in [src/lib/team/teams.ts](src/lib/team/teams.ts).
-- **Source of truth:** a Google Sheet, published as CSV
-- **Editing & writes:** a Google Apps Script Web App attached to the sheet
-- **Auth:** Google Identity Services (Sign in with Google)
-- **Booking:** Google Calendar API v3, sends invites to both attendees
+## The Problem
 
-## Sheet schema
+Distributed teams live across timezones. You can never quickly see who's at desk, who's about to log off, or what window you've got to talk live. Most tools either lock the data in their cloud, charge per-seat, or only show the current local time — not actual working hours.
 
-Required columns (header row, in this order):
+## The Solution
+
+A static SvelteKit app backed by your own Supabase. Every teammate's working hours render as a 24-hour grid in their local timezone — current-hour ring, day boundaries, tap-to-translate-time. Each team gets a shareable URL; sign-in unlocks editing. No central server.
 
 ```
-name | timezone | imgUrl | startWorkTime | endWorkTime | startWorkTime | endWorkTime | email
+Browser (SvelteKit) → Supabase (your account) → Postgres + RLS
 ```
 
-- `timezone`: `UTC+4`, `UTC-04:00`, `UTC+5:30`, etc. Half-hour and 45-minute offsets are supported. (Legacy `GMT±N` is also parsed.)
-- The two `startWorkTime/endWorkTime` pairs let a teammate have a split shift (e.g., `9:00–18:00` and `21:30–0:00`). The second pair can be left blank.
-- Use `0:00` to mean "midnight at the end of the day" (e.g., a shift ending at midnight).
-- `email` is required for any row that wants to be editable or invited to meetings; values are matched case-insensitively against the signed-in user's Google email.
+## Features
 
-## Local development
+- **Timeline grid** — 24-hour blocks per teammate, with current-hour ring, day-boundary chips, and hover/tap-to-translate-time across rows.
+- **Up to two shifts/day** — handles split work patterns (e.g. on-call sweeps, evening syncs).
+- **Per-team share URL** — `/teams/<your-slug>`. Optional password on top. Rename the slug to revoke.
+- **Multi-tenant** — every signed-in user owns their own teams, isolated by Postgres row-level security.
+- **Auto-link** — invited members bind to their auth identity automatically when they first sign in with a matching email.
+- **Magic-link or Google sign-in** — both built-in, configured per-deployment in your Supabase.
+- **Mobile-friendly** — tap-to-pin highlights an hour across rows; the timeline scrolls horizontally on small screens.
+
+## Prerequisites
+
+- [Node.js 20+](https://nodejs.org) (only for `npm run dev`/`build` — production deploys are static and run anywhere)
+- Free [Supabase](https://supabase.com) account
+- Modern browser (Chrome, Safari, Firefox — `localStorage` + `Intl` are required)
+
+## Setup
 
 ```bash
+git clone https://github.com/Lashapor/teamtime.git
+cd teamtime
 npm install
-cp .env.example .env   # fill in your values (see below)
-npm run dev            # http://localhost:5173
-npm test               # vitest run on time + parser logic
-npm run check          # svelte-check
+npm run dev
 ```
 
-## Environment variables
+Open [http://localhost:5173](http://localhost:5173). The setup wizard walks you through everything:
 
-Set these in `.env` for local dev and in your hosting provider for production. All four are public (the `PUBLIC_` prefix exposes them to the browser).
+1. Sign up at supabase.com and create a new project (~30s).
+2. Paste your **Project URL** and **publishable key** into the wizard.
+3. Click **Copy SQL** → **Open SQL Editor** → paste → **Run**. (~5s; one time only.)
+4. Optional: enable Google sign-in by configuring an OAuth client in Google Cloud Console (10 min, instructions in [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)).
+5. Click **Connect** → sign in via magic-link → create your first team.
 
-| Var                          | What it is                                                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `PUBLIC_CSV_URL`             | The "Publish to web" CSV URL of your sheet. Optional — falls back to the bundled default sheet.             |
-| `PUBLIC_APPS_SCRIPT_URL`     | The Web App URL of your deployed Apps Script. Required for editing rows.                                    |
-| `PUBLIC_GOOGLE_CLIENT_ID`    | OAuth 2.0 Web Client ID. Required for Sign in with Google + Calendar booking.                               |
-| `PUBLIC_SHEET_WRITE_SECRET`  | Random shared secret. Frontend sends it to Apps Script; Apps Script verifies it. Rotate when needed.        |
+No `.env` files. No `npm run db:push`. Everything runs from the browser.
 
-You can also pass a custom CSV URL at runtime via the URL hash, e.g. `/thn#https://docs.google.com/.../pub?output=csv`.
+## Usage
 
-## Adding a team
+```bash
+npm run dev          # http://localhost:5173
+npm run build        # production build (deploys to any static host)
+npm run preview      # preview production build locally
 
-Each team is a slug-keyed entry in [src/lib/team/teams.ts](src/lib/team/teams.ts) and a folder under `src/routes/<slug>/`. To add a new team, append an entry to `TEAMS` (with its own password and optional `csvUrl`) and create `src/routes/<slug>/+page.svelte` that mirrors `src/routes/thn/+page.svelte`.
+npm test             # vitest unit tests on time + offset math
+npm run check        # svelte-check
+```
 
-## Deploying the Apps Script writer
+Once connected, copy your **Setup link** from the `/account` page. Save it in your password manager — opening that link on any new browser, phone, or invited teammate's device skips the wizard entirely.
 
-1. Open the Google Sheet → **Extensions → Apps Script**.
-2. Replace the contents of `Code.gs` with [scripts/Code.gs](scripts/Code.gs).
-3. **Project Settings → Script Properties → Add script property**, four entries:
-   - `SHARED_SECRET` — same value as `PUBLIC_SHEET_WRITE_SECRET` in the frontend
-   - `SHEET_ID` — the spreadsheet ID (from its URL)
-   - `SHEET_NAME` — e.g., `Sheet1`
-   - `GOOGLE_CLIENT_ID` — same OAuth Web Client ID as the frontend
-4. **Deploy → New deployment → Web app**
-   - Description: `TeamTime writer v1`
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-5. Copy the resulting `/exec` URL into `PUBLIC_APPS_SCRIPT_URL`.
-6. Re-deploy ("Manage deployments → ✏️ → New version") whenever you change `Code.gs`.
+## Project Structure
 
-The frontend POSTs as `text/plain` to dodge CORS preflight; the script parses the JSON body itself.
+```
+teamtime/
+├── supabase.sql              # Schema + RLS + RPCs (paste once into Supabase SQL Editor)
+├── src/
+│   ├── routes/
+│   │   ├── +page.svelte                      # Landing page
+│   │   ├── setup/                            # In-browser BYO-Supabase wizard
+│   │   ├── login/                            # Magic-link + Google sign-in
+│   │   ├── dashboard/                        # Your teams list
+│   │   ├── teams/new/                        # Create a team
+│   │   ├── teams/[slug]/                     # Public read-only timeline
+│   │   ├── teams/[slug]/admin/               # Owner admin: members, settings, sharing
+│   │   └── account/                          # Profile, sign-out, setup-link copy
+│   └── lib/
+│       ├── db/
+│       │   ├── client.ts                     # Supabase client + localStorage config
+│       │   ├── queries.ts                    # Typed query/mutation helpers
+│       │   └── auth-store.ts                 # Reactive auth store
+│       ├── auth/supabase-auth.ts             # Magic-link + Google + signOut wrappers
+│       ├── team/                             # Timeline UI (rows, cells, edit panel)
+│       ├── time/                             # Timezone offset + shift math (no DST)
+│       ├── components/                       # Generic UI (Button, TextInput, etc.)
+│       └── stores/                           # Svelte stores (viewer, day anchor, hover)
+└── docs/
+    ├── SELF_HOSTING.md       # Step-by-step deployment guide + troubleshooting
+    └── ARCHITECTURE.md       # Trust model, data model, permission rules
+```
 
-## Setting up Google OAuth
+## Tech Stack
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → create / pick a project.
-2. **APIs & Services → Library** → enable **Google Calendar API**.
-3. **APIs & Services → OAuth consent screen** → External, fill in basics, add the scope `https://www.googleapis.com/auth/calendar.events`.
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application**.
-   - Authorized JavaScript origins: `http://localhost:5173`, your production URL.
-   - Authorized redirect URIs: not needed for the implicit / token client we use.
-5. Copy the Client ID into `PUBLIC_GOOGLE_CLIENT_ID`.
+- **Frontend:** SvelteKit 2 + Svelte 5 (legacy syntax), Vite 8, Tailwind 3, Luxon
+- **Backend:** none — your browser talks directly to Supabase
+- **Database:** Supabase (Postgres + RLS + Auth)
+- **Tests:** Vitest 4 (focused on timezone + shift math)
+- **Deploy target:** any static host. `adapter-auto` picks Vercel, Netlify, Cloudflare Pages, etc. without configuration.
 
-## How it works
+## Privacy
 
-- `src/lib/sheet/parser.ts` parses the CSV manually so duplicate `startWorkTime/endWorkTime` columns are preserved. d3 is no longer used.
-- `src/lib/time/*` uses Luxon for all offset math. We model fixed UTC offsets only (no DST).
-- `src/lib/team/*` renders the timeline. The viewer's reference timezone is auto-detected from `Intl` and overrideable via a dropdown (persisted in `localStorage`).
-- `src/lib/auth/gis.ts` lazily loads Google Identity Services. Sign-in must be triggered from a real user click.
-- `src/lib/calendar/client.ts` calls Calendar API v3 with `sendUpdates=all` so both attendees get the invite email.
-- `src/lib/sheet/writer.ts` POSTs row edits to the Apps Script Web App. Edits are gated by signed-in email matching the row's email.
+All your team's data lives in *your* Supabase project. There is no central TeamTime database, no analytics, no telemetry, no third-party tracking. The TeamTime code only runs in your browser and talks directly to your Supabase instance over HTTPS. Drop your Supabase project to delete every byte.
 
-## Out of scope (for now)
+## License
 
-DST-aware named zones · persisted sessions · server-side avatar caching · multi-team / per-row PTO · drag-to-select multi-hour booking · reschedule / cancel from UI · admin UI for the Apps Script secret.
+MIT

@@ -4,32 +4,28 @@ export type Shift = {
 };
 
 export type TeamMember = {
+	id: string;
 	name: string;
 	email: string;
 	imgUrl: string | null;
 	offsetMinutes: number;
 	offsetLabel: string;
 	shifts: [Shift] | [Shift, Shift];
-	rowIndex: number;
+	role: 'owner' | 'editor' | 'viewer';
+	userId: string | null;
+};
+
+export type Team = {
+	id: string;
+	slug: string;
+	name: string;
+	ownerId: string;
+	shareEnabled: boolean;
+	sharePassword: string | null;
 };
 
 export type ViewerRef = {
 	offsetMinutes: number;
 	label: string;
 	source: 'detected' | 'manual';
-};
-
-export type SignedInUser = {
-	email: string;
-	name: string;
-	picture: string | null;
-	idToken: string;
-	accessToken: string;
-	accessTokenExpiresAt: number;
-};
-
-export type RowPatch = {
-	email: string;
-	timezone?: string;
-	shifts: Shift[];
 };

@@ -4,20 +4,18 @@
 	import AvatarImg from './AvatarImg.svelte';
 	import EditRowPanel from './EditRowPanel.svelte';
 	import { hoveredInstant, pinnedInstant, togglePin } from '../stores/hover';
-	import { signedInUser } from '../stores/auth';
 	import { hourCellInstant, instantToRowLocal, isCurrentHour, nowInOffset } from '../time/clock';
 	import { isInstantInShifts } from '../time/shifts';
 	import { shortLabel } from '../time/offsets';
 	import type { TeamMember } from '../types';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 
+	const dispatch = createEventDispatcher<{ saved: void }>();
+
 	export let member: TeamMember;
 	export let anchorDay: DateTime;
-	export let bookingEnabled = true;
-
-	const dispatch = createEventDispatcher<{
-		bookCell: { member: TeamMember; instant: DateTime; rowLocal: DateTime };
-	}>();
+	export let canEdit = false;
+	export let currentShiftIds: string[] = [];
 
 	let editing = false;
 	let now = nowInOffset(member.offsetMinutes);
@@ -55,8 +53,6 @@
 		.map((c, i) => ({ index: i, rowLocal: c.rowLocal, isDayStart: c.isDayStart }))
 		.filter((c) => c.isDayStart);
 
-	$: canEdit = bookingEnabled && !!$signedInUser && $signedInUser.email === member.email;
-
 	function onHover(e: CustomEvent<DateTime>) {
 		hoveredInstant.set(e.detail);
 	}
@@ -65,9 +61,6 @@
 	}
 	function onClick(e: CustomEvent<{ instant: DateTime; rowLocal: DateTime }>) {
 		togglePin(e.detail.instant);
-		if (bookingEnabled) {
-			dispatch('bookCell', { member, instant: e.detail.instant, rowLocal: e.detail.rowLocal });
-		}
 	}
 
 	function matches(a: DateTime, b: DateTime | null): boolean {
@@ -139,8 +132,12 @@
 	{#if editing && canEdit}
 		<EditRowPanel
 			{member}
+			{currentShiftIds}
 			on:close={() => (editing = false)}
-			on:saved={() => (editing = false)}
+			on:saved={() => {
+				editing = false;
+				dispatch('saved');
+			}}
 		/>
 	{/if}
 </div>
